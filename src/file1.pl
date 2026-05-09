@@ -2,6 +2,10 @@
 :- dynamic tangan_pemain/2.
 :- dynamic discard_top/1.
 :- dynamic warna_aktif/1.
+:- dynamic sisa_kartu/1.
+:- dynamic efek_kartu/1.
+:- dynamic deck_kartu/1.
+:- dynamic urutan_pemain/1.
 
 /* Facts */
 warna(merah). warna(kuning). warna(hijau). warna(biru).
@@ -85,3 +89,39 @@ mainkanKartu(NomorUrutKartudiTangan) :-
         )   ;   write('Nomor urut tidak valid! Anda tidak memiliki kartu di posisi tersebut.'), nl,
         input_lagi
     ).
+
+/* AMBIL KARTU */
+ambilKartu :-
+    giliran_sekarang(Pemain),
+    efek_kartu(Eff),
+    (Eff == draw2 -> N = 2;
+    Eff == draw4 -> N = 4;
+    N = 1).
+    proses_ambil(Pemain, N).
+    retract(efek_kartu(_)),
+    asserta(efek_kartu(none)),
+    format('~w mendapatkan kartu.~n', [Pemain]),
+    pindah_giliran.
+
+proses_ambil(_,0) :- !.
+proses_ambil(Pemain, N) :-
+    retract(deck_kartu([H|T])),
+    retract(tangan_pemain(Pemain, Tangan)),
+    append(Tangan, [H], Tangan1),
+    asserta(tangan_pemain(Pemain, Tangan1)),
+    asserta(deck_kartu(T)),
+    N1 is N - 1,
+    proses_ambil(Pemain, N1).
+
+pindah_giliran :-
+    retract(giliran_sekarang),
+    urutan_pemain(Urutan),
+    pemain_selanjutnya(Pemain, Urutan, Pemain1),
+    asserta(giliran_sekarang(Pemain1)),
+    format('Giliran ~w.~n', [Pemain1]).
+
+pemain_selanjutnya(Sebelum, List, Sesudah) :- 
+    nth0(Indeks, List, Sebelum),
+    length(List, Len),
+    Indeks1 is (Indeks + 1) mod Len,
+    nth0(Indeks1, List, Sesudah).
