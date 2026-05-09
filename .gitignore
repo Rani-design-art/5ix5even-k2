@@ -1,0 +1,4 @@
+# Prolog temporary files
+*.qlf
+*.log
+*~
