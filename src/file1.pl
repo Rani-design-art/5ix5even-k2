@@ -1,11 +1,11 @@
-:- dynamic giliran_sekarang/1.
-:- dynamic tangan_pemain/2.
-:- dynamic discard_top/1.
-:- dynamic warna_aktif/1.
-:- dynamic sisa_kartu/1.
-:- dynamic efek_kartu/1.
-:- dynamic deck_kartu/1.
-:- dynamic urutan_pemain/1.
+:- dynamic(giliran_sekarang/1).
+:- dynamic(tangan_pemain/2).
+:- dynamic(discard_top/1).
+:- dynamic(warna_aktif/1).
+:- dynamic(sisa_kartu/1).
+:- dynamic(efek_kartu/1).
+:- dynamic(deck_kartu/1).
+:- dynamic(urutan_pemain/1).
 
 /* Facts */
 warna(merah). warna(kuning). warna(hijau). warna(biru).
@@ -36,9 +36,12 @@ hapus_kartu_ke(N, [H|T], [H|R]) :-
 
 /* Helper MAINKAN KARTU*/
 input_lagi :-
-    write('Masukkan nomor urut kartu lain: '),
-    read(NomorBaru),
-    mainkanKartu(NomorBaru).
+    write('Tidak valid! Masukkan nomor urut kartu lain (atau ketik batal. untuk batal): '),
+    read(Masukan),
+    (   Masukan == batal
+    ->  write('Batal memainkan kartu. Silakan lakukan aksi lain! (misal: ambilKartu).'), nl
+    ;   mainkanKartu(Masukan)
+    ).
 
 update_warna_aktif(hitam) :- !,
     write('Pilih warna (merah/kuning/hijau/biru): '),
@@ -60,9 +63,6 @@ aplikasikan_efek(kartu(_, Jenis)) :-
     (jenis_angka(Jenis) ; Jenis == wild),
     !,
     pindah_giliran.
-
-pindah_giliran :- 
-    write('Giliran berikutnya...'), nl.
 
 /* MAINKAN KARTU */
 mainkanKartu(NomorUrutKartudiTangan) :-
@@ -95,9 +95,9 @@ ambilKartu :-
     giliran_sekarang(Pemain),
     efek_kartu(Eff),
     (Eff == draw2 -> N = 2;
-    Eff == draw4 -> N = 4;
-    N = 1).
-    proses_ambil(Pemain, N).
+     Eff == draw4 -> N = 4;
+     N = 1),
+    proses_ambil(Pemain, N),
     retract(efek_kartu(_)),
     asserta(efek_kartu(none)),
     format('~w mendapatkan kartu.~n', [Pemain]),
@@ -114,7 +114,7 @@ proses_ambil(Pemain, N) :-
     proses_ambil(Pemain, N1).
 
 pindah_giliran :-
-    retract(giliran_sekarang),
+    retract(giliran_sekarang(Pemain)),
     urutan_pemain(Urutan),
     pemain_selanjutnya(Pemain, Urutan, Pemain1),
     asserta(giliran_sekarang(Pemain1)),
