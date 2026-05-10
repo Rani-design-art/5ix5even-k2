@@ -126,3 +126,80 @@ pemain_selanjutnya(Sebelum, List, Sesudah) :-
     length(List, Len),
     Indeks1 is (Indeks + 1) mod Len,
     nth0(Indeks1, List, Sesudah).
+
+/* LIHAT COMMAND */
+lihatCommand :-
+    efek_kartu(Eff),
+    write('Aksi utama yang tersedia:'), nl,
+    tampilkan_aksi_utama(Eff),
+    nl,
+    write('Aksi pendukung yang tersedia:'), nl,
+    write('1. lihatCommand'), nl,
+    write('2. lihatKartu'), nl,
+    write('3. cekInfo'), nl.
+ 
+tampilkan_aksi_utama(draw_two) :- !,
+    write('1. ambilKartu'), nl.
+ 
+tampilkan_aksi_utama(draw_four) :- !,
+    write('1. ambilKartu'), nl,
+    write('2. tantang'), nl.
+ 
+tampilkan_aksi_utama(_) :-
+    write('1. mainkanKartu(NomorUrut)'), nl,
+    write('2. ambilKartu'), nl,
+    write('3. tantang'), nl,
+    write('4. uni(NomorUrut)'), nl,
+    write('5. godsHand'), nl,
+    write('6. sembunyikanKartu(NomorUrut)'), nl,
+    write('7. tampilkanKartu'), nl.
+ 
+/* LIHAT KARTU */
+:- dynamic(kartu_disembunyikan/2).
+ 
+lihatKartu :-
+    giliran_sekarang(Pemain),
+    tangan_pemain(Pemain, ListKartu),
+    write('Berikut kartu yang anda miliki.'), nl,
+    tampilkan_list_kartu(ListKartu, Pemain, 1).
+ 
+tampilkan_list_kartu([], _, _) :- !.
+ 
+tampilkan_list_kartu([kartu(Warna, Jenis) | Sisa], Pemain, N) :-
+    (   kartu_disembunyikan(Pemain, N)
+    ->  format('~w. ~w-~w (disembunyikan)~n', [N, Warna, Jenis])
+    ;   format('~w. ~w-~w~n', [N, Warna, Jenis])
+    ),
+    N1 is N + 1,
+    tampilkan_list_kartu(Sisa, Pemain, N1).
+ 
+ 
+/* CEK INFO */
+ 
+cekInfo :-
+    discard_top(kartu(Warna, Jenis)),
+    format('Kartu discard top: ~w-~w.', [Warna, Jenis]), nl,
+    nl,
+ 
+    urutan_pemain(ListPemain),
+    write('Urutan pemain: '),
+    cetak_urutan_pemain(ListPemain), nl,
+    nl,
+ 
+    cetak_info_semua_pemain(ListPemain, 1).
+ 
+cetak_urutan_pemain([]).
+cetak_urutan_pemain([P]) :- !, write(P), write('.').
+cetak_urutan_pemain([P|Sisa]) :-
+    write(P), write(' - '),
+    cetak_urutan_pemain(Sisa).
+ 
+cetak_info_semua_pemain([], _) :- !.
+cetak_info_semua_pemain([Pemain|Sisa], N) :-
+    tangan_pemain(Pemain, ListKartu),
+    length(ListKartu, JumlahKartu),
+    format('Nama pemain ~w: ~w~n', [N, Pemain]),
+    format('Jumlah kartu : ~w~n', [JumlahKartu]),
+    nl,
+    N1 is N + 1,
+    cetak_info_semua_pemain(Sisa, N1).
