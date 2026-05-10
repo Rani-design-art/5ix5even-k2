@@ -6,6 +6,7 @@
 :- dynamic(efek_kartu/1).
 :- dynamic(deck_kartu/1).
 :- dynamic(urutan_pemain/1).
+:- dynamic(kartu_disembunyikan/2).
 
 /* Facts */
 warna(merah). warna(kuning). warna(hijau). warna(biru).
