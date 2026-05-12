@@ -59,7 +59,7 @@ startGame :-
     write('⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀ ⠈⠉⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣀⠴⠋⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀'), nl,
     write('⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⠞⠉⠉⠳⡤⠤⣄⣀⣀⣀⣀⣀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀'), nl,
     write(' ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸⠀⠀⠀⠀⠀⡇⠀⠀⠀⠀⠀⠀⠈⢣⠏⠉⠓⡄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀'), nl,
-    write('⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠓⠤⢄⡤⡾⠁⠸⠀⢦⢸⠀⡇⡇⠀⠀⠀⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀'), nl
+    write('⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠓⠤⢄⡤⡾⠁⠸⠀⢦⢸⠀⡇⡇⠀⠀⠀⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀'), nl,
     write(' ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⡔⠁⢸⠀⢠⠃⡆⢇⡇⡇⠈⡗⠒⠋⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀'), nl,
     write(' ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⡼⠁⠀⠀⠉⠁⠀⠃⠀⠃⠈⠀⠀⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀'), nl,
     write('⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠚⠓⠒⠒⠦⠤⠤⢄⣀⣀⣀⣀⣀⣸⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀'), nl,
@@ -144,16 +144,24 @@ tentukan_discard_awal([KartuAksi|SisaDeck], KartuAwal, DeckSisaAkhir) :-
     tentukan_discard_awal(DeckBaru, KartuAwal, DeckSisaAkhir).
 
 % randomize deck
-acak_deck(List, Acak) :-
-    tambah_kunci_acak(List, ListKunci),
-    keysort(ListKunci, ListKunciUrut),
-    buang_kunci(ListKunciUrut, Acak).
+acak_deck([], []).
+% Rekursi: Cabut 1 kartu acak, lalu acak sisanya
+acak_deck(ListAwal, [KartuAcak|SisaAcak]) :-
+    random_card(ListAwal, KartuAcak, ListSisa),
+    acak_deck(ListSisa, SisaAcak).
 
-tambah_kunci_acak([], []).
-tambah_kunci_acak([H|T], [K-H|T1]) :-
-    random(1, 10000, K),
-    tambah_kunci_acak(T, T1).
+random_card(List, Card, NewList) :-
+    count_list(List, Len),
+    random(0, Len, Index),
+    pick_at_index(List, Index, Card, NewList).
 
-buang_kunci([], []).
-buang_kunci([_-H|T], [H|T1]) :-
-    buang_kunci(T, T1).
+count_list([], 0).
+count_list([_|T], N) :-
+    count_list(T, N1),
+    N is N1 + 1.
+
+pick_at_index([H|T], 0, H, T) :- !.
+pick_at_index([H|T], I, Card, [H|Rest]) :-
+    I > 0,
+    I1 is I - 1,
+    pick_at_index(T, I1, Card, Rest).
