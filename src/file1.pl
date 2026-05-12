@@ -47,7 +47,7 @@ input_lagi :-
 update_warna_aktif(hitam) :- !,
     write('Pilih warna (merah/kuning/hijau/biru): '),
     read(WarnaBaru),
-    (   member(WarnaBaru, [merah, kuning, hijau, biru])
+    (   warna(WarnaBaru)
     ->  retract(warna_aktif(_)),
         asserta(warna_aktif(WarnaBaru)),
         format('Warna aktif sekarang: ~w.~n', [WarnaBaru])
