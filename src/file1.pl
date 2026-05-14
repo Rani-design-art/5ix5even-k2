@@ -61,10 +61,47 @@ update_warna_aktif(Warna) :-
     retract(warna_aktif(_)),
     asserta(warna_aktif(Warna)).
 
+reverse_pemain(List, Hasil) :- 
+    reverseP(List, [], Hasil).
+
+reverseP([], Acc, Acc).
+reverseP([H|T], Acc, Hasil) :- 
+    reverseP(T, [H|Acc], Hasil).
+
+/* Efek Kartu Aksi */
 aplikasikan_efek(kartu(_, Jenis)) :-
     (jenis_angka(Jenis) ; Jenis == wild),
     !,
     pindah_giliran.
+aplikasikan_efek(kartu(Warna, reverse)) :-
+    Warna \= hitam,
+    !,
+    retract(urutan_pemain(ListLama)),
+    reverse_pemain(ListLama, ListBaru),
+    asserta(urutan_pemain(ListBaru)),
+    write('Kartu Reverse! Arah putaran pemain dibalik.'), nl,
+    pindah_giliran.
+
+aplikasikan_efek(kartu(Warna, skip)) :-
+    Warna \= hitam,
+    !,
+    giliran_sekarang(PemainSekarang),
+    urutan_pemain(List),
+    pemain_selanjutnya(PemainSekarang, List, PemainTerlewati),
+    format('Kartu Skip! ~w dilewati.~n', [PemainTerlewati]),
+    pindah_giliran,
+    pindah_giliran. 
+
+aplikasikan_efek(kartu(Warna, draw_two)) :-
+    Warna \= hitam,
+    !,
+    giliran_sekarang(PemainSekarang),
+    urutan_pemain(List),
+    pemain_selanjutnya(PemainSekarang, List, PemainKenaEfek),
+    proses_ambil(PemainKenaEfek, 2),
+    format('Kartu Draw Two! ~w mengambil 2 kartu dan dilewati.~n', [PemainKenaEfek]),
+    pindah_giliran, 
+    pindah_giliran. 
 
 /* MAINKAN KARTU */
 mainkanKartu(NomorUrutKartudiTangan) :-
