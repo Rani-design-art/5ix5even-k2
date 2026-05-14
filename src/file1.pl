@@ -216,6 +216,7 @@ pemain_sebelumnya(Sesudah, List, Sebelum):-
 punya_kartu_valid(Pemain, kartu(Warna, Jenis)):-
     tangan_pemain(Pemain, ListKartu),
     member(Kartu, ListKartu),
+    Kartu \= kartu(hitam, wild),
     Kartu \= kartu(hitam, wild_draw_four),
     (Kartu = kartu(Warna,_);Kartu = kartu(_,Jenis)).
 
@@ -229,6 +230,10 @@ tantang:-
     kartu_dibuang(KartuSebelum),
     (punya_kartu_valid(Sebelum, KartuSebelum)->
         tantangBerhasil(Sebelum);tantangGagal(Sesudah)).
+
+    retract(efek_kartu(_),
+    asserta(efek_kartu(none)),
+    pindah_giliran.
 
 tantangBerhasil(Pemain):-
     proses_ambil(Pemain, 4),
