@@ -19,8 +19,14 @@ jenis_aksi(skip). jenis_aksi(reverse). jenis_aksi(draw_two).
 jenis_aksi_wild(wild). jenis_aksi_wild(wild_draw_four).
 
 /* Rules */
-valid_dimainkan(kartu(hitam, wild), _, _).
-valid_dimainkan(kartu(hitam, wild_draw_four), _, _).
+valid_dimainkan(kartu(hitam, wild), kartu(_,JenisAtas), _) :-
+    JenisAtas \= wild,
+    JenisAtas \= wild_draw_four.
+valid_dimainkan(kartu(hitam, wild_draw_four), kartu(_, JenisAtas), WarnaAktif):-
+    JenisAtas \= wild,
+    JenisAtas \= wild_draw_four,
+    giliran_sekarang(Pemain),
+    \+ punya_kartu_valid(Pemain, kartu(WarnaAktif, JenisAtas)).
 valid_dimainkan(kartu(Warna, _), _, Warna).
 valid_dimainkan(kartu(_, Jenis), kartu(_, Jenis), _).
 
