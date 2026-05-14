@@ -7,6 +7,7 @@
 :- dynamic(deck_kartu/1).
 :- dynamic(urutan_pemain/1).
 :- dynamic(kartu_disembunyikan/2).
+:- dynamic(kartu_dibuang/1).
 
 /* Facts */
 warna(merah). warna(kuning). warna(hijau). warna(biru).
@@ -79,6 +80,9 @@ mainkanKartu(NomorUrutKartudiTangan) :-
             hapus_kartu_ke(NomorUrutKartudiTangan, ListKartu, ListKartuBaru),
             retract(tangan_pemain(Pemain, _)),
             asserta(tangan_pemain(Pemain, ListKartuBaru)),
+
+            retractall(kartu_dibuang(_)),
+            asserta(kartu_dibuang(KartuAtas)),
             
             retract(discard_top(_)),
             asserta(discard_top(KartuPilihan)),
@@ -173,9 +177,7 @@ tampilkan_list_kartu([kartu(Warna, Jenis) | Sisa], Pemain, N) :-
     N1 is N + 1,
     tampilkan_list_kartu(Sisa, Pemain, N1).
  
- 
 /* CEK INFO */
- 
 cekInfo :-
     discard_top(kartu(Warna, Jenis)),
     format('Kartu discard top: ~w-~w.', [Warna, Jenis]), nl,
@@ -203,3 +205,35 @@ cetak_info_semua_pemain([Pemain|Sisa], N) :-
     nl,
     N1 is N + 1,
     cetak_info_semua_pemain(Sisa, N1).
+
+/* TANTANG */
+pemain_sebelumnya(Sesudah, List, Sebelum):-
+    nth0(Indeks, List, Sesudah),
+    length(List, Len),
+    (Indeks =:= 0 -> IndeksSebelum is Len - 1; IndeksSebelum is Indeks - 1),
+    nth0(IndeksSebelum, List, Sebelum).
+
+punya_kartu_valid(Pemain, kartu(Warna, Jenis)):-
+    tangan_pemain(Pemain, ListKartu),
+    member(Kartu, ListKartu),
+    Kartu \= kartu(hitam, wild_draw_four),
+    (Kartu = kartu(Warna,_);Kartu = kartu(_,Jenis)).
+
+tantang:-
+    write('Tantangan dilakukan!'), nl,
+    giliran_sekarang(Sesudah),
+    urutan_pemain(List),
+    pemain_sebelumnya(Sesudah, List, Sebelum),
+    format('Memeriksa kartu ~w...~n', [Sebelum]),
+    
+    kartu_dibuang(KartuSebelum),
+    (punya_kartu_valid(Sebelum, KartuSebelum)->
+        tantangBerhasil(Sebelum);tantangGagal(Sesudah)).
+
+tantangBerhasil(Pemain):-
+    proses_ambil(Pemain, 4),
+    format('Tantangan berhasil. ~w mendapatkan 4 kartu acak.~n', [Pemain]).
+
+tantangGagal(Pemain):-
+    proses_ambil(Pemain, 6),
+    format('Tantangan gagal. ~w mendapatkan 6 kartu acak.~n', [Pemain]).
