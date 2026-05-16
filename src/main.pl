@@ -165,3 +165,97 @@ pick_at_index([H|T], I, Card, [H|Rest]) :-
     I > 0,
     I1 is I - 1,
     pick_at_index(T, I1, Card, Rest).
+
+% fitur endGame & perhitungan poin
+
+% tambahan fakta kartu mimic (kalau nanti mau dibikin)
+jenis_aksi_wild(mimic).
+
+% aturan nilai poin kartu
+poin_kartu(kartu(_, Jenis), Poin) :-
+    jenis_angka(Jenis), Poin is Jenis, !.
+poin_kartu(kartu(_, Jenis), 10) :-
+    jenis_aksi(Jenis), !.
+poin_kartu(kartu(hitam, Jenis), 20) :-
+    jenis_aksi_wild(Jenis), !.
+
+% ngitung total poin dari list kartu di tangan
+hitung_poin_tangan([], 0).
+hitung_poin_tangan([Kartu|Sisa], TotalPoin) :-
+    poin_kartu(Kartu, Poin),
+    hitung_poin_tangan(Sisa, PoinSisa),
+    TotalPoin is Poin + PoinSisa.
+
+% ngecek apakah permainan sudah selesai (kartunya kosong)
+cek_selesai :-
+    (   tangan_pemain(_, [])
+    ->  endGame
+    ;   true
+    ).
+
+% spek endGame
+endGame :-
+    tangan_pemain(Pemenang, []), !,
+    format('Permainan selesai! ~w menghabiskan semua kartunya!~n~n', [Pemenang]),
+    write('Berikut perhitungan poin sisa kartu.'), nl,
+    
+    % nyetak perhitungan poin tiap pemain
+    urutan_pemain(UrutanAsli),
+    cetak_semua_rincian(UrutanAsli),
+    nl,
+    
+    write('Urutan pemenang:'), nl,
+    kumpulkan_skor(UrutanAsli, UrutanAsli, ListSkor),
+    sort(ListSkor, ListSkorSorted), 
+    cetak_urutan_pemenang(ListSkorSorted, 1),
+    nl,
+    format('Selamat, ~w menjadi pemenang!~n', [Pemenang]),
+    !.
+
+endGame :-
+    write('Belum ada pemain yang menghabiskan kartu. Lanjut main!'), nl.
+
+% helper pencetakan rincian poin
+cetak_semua_rincian([]).
+cetak_semua_rincian([Pemain|T]) :-
+    cetak_rincian_poin(Pemain),
+    cetak_semua_rincian(T).
+
+cetak_rincian_poin(Pemain) :-
+    tangan_pemain(Pemain, Tangan),
+    (   Tangan == []
+    ->  format('~w: kartu habis = 0 poin~n', [Pemain])
+    ;   format('~w: ', [Pemain]),
+        cetak_kartu_rincian(Tangan),
+        write(' = '),
+        cetak_angka_rincian(Tangan),
+        hitung_poin_tangan(Tangan, Total),
+        format(' = ~w poin~n', [Total])
+    ).
+
+cetak_kartu_rincian([kartu(Warna, Jenis)]) :- format('~w-~w', [Warna, Jenis]), !.
+cetak_kartu_rincian([kartu(Warna, Jenis)|T]) :- 
+    format('~w-~w + ', [Warna, Jenis]), 
+    cetak_kartu_rincian(T).
+
+cetak_angka_rincian([Kartu]) :- poin_kartu(Kartu, Poin), write(Poin), !.
+cetak_angka_rincian([Kartu|T]) :- 
+    poin_kartu(Kartu, Poin), 
+    format('~w + ', [Poin]), 
+    cetak_angka_rincian(T).
+
+% helper mengumpulkan data dan peringkat
+% List output format: skor(TotalPoin, JmlKartu, IndexUrutanAwal, NamaPemain)
+kumpulkan_skor([], _, []).
+kumpulkan_skor([Pemain|T], UrutanAsli, [skor(Poin, JmlKartu, Index, Pemain)|SisaSkor]) :-
+    tangan_pemain(Pemain, Tangan),
+    hitung_poin_tangan(Tangan, Poin),
+    length(Tangan, JmlKartu),
+    nth0(Index, UrutanAsli, Pemain), % Index dipakai untuk tie-breaker ke-2
+    kumpulkan_skor(T, UrutanAsli, SisaSkor).
+
+cetak_urutan_pemenang([], _).
+cetak_urutan_pemenang([skor(Poin, _, _, Pemain)|T], Peringkat) :-
+    format('~w. ~w (~w poin)~n', [Peringkat, Pemain, Poin]),
+    Peringkat1 is Peringkat + 1,
+    cetak_urutan_pemenang(T, Peringkat1).
