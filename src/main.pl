@@ -196,8 +196,6 @@ pick_at_index([H|T], I, Card, [H|Rest]) :-
 
 % fitur endGame & perhitungan poin
 
-% tambahan fakta kartu mimic (kalau nanti mau dibikin)
-jenis_aksi_wild(mimic).
 
 % aturan nilai poin kartu
 poin_kartu(kartu(_, Jenis), Poin) :-

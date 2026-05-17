@@ -17,6 +17,7 @@ jenis_angka(0). jenis_angka(1). jenis_angka(2). jenis_angka(3). jenis_angka(4).
 jenis_angka(5). jenis_angka(6). jenis_angka(7). jenis_angka(8). jenis_angka(9).
 jenis_aksi(skip). jenis_aksi(reverse). jenis_aksi(draw_two).
 jenis_aksi_wild(wild). jenis_aksi_wild(wild_draw_four).
+jenis_aksi_wild(mimic).
 
 /* Rules */
 valid_dimainkan(kartu(hitam, wild), kartu(_,JenisAtas), _) :-
@@ -274,7 +275,7 @@ tantang:-
     (punya_kartu_valid(Sebelum, KartuSebelum)->
         tantangBerhasil(Sebelum);tantangGagal(Sesudah)).
 
-    retract(efek_kartu(_),
+    retract(efek_kartu(_)),
     asserta(efek_kartu(none)),
     pindah_giliran.
 
@@ -285,3 +286,44 @@ tantangBerhasil(Pemain):-
 tantangGagal(Pemain):-
     proses_ambil(Pemain, 6),
     format('Tantangan gagal. ~w mendapatkan 6 kartu acak.~n', [Pemain]).
+
+/* UNI: NomorUrutKartudiTangan */
+
+uni(NomorUrut) :-
+    giliran_sekarang(Pemain),
+    tangan_pemain(Pemain, ListKartu),
+    length(ListKartu, JumlahKartu),
+    
+    % kartu di tangan harus 2
+    (   JumlahKartu \= 2
+    ->  write('Gagal deklarasi UNI! Anda hanya bisa menggunakan perintah ini jika kartu Anda sisa 2.'), nl, !, fail
+    ;   true
+    ),
+
+    % nomor urut kartu ada di tangan
+    (   ambil_kartu(NomorUrut, ListKartu, KartuPilihan)
+    ->  discard_top(KartuAtas),
+        warna_aktif(WarnaAktif),
+        
+        % cek valid
+        (   valid_dimainkan(KartuPilihan, KartuAtas, WarnaAktif)
+        ->  KartuPilihan = kartu(WarnaKartu, JenisKartu),
+  
+            format('~w berteriak: "UNI!!!"~n', [Pemain]),
+            format('~w memainkan kartu: ~w-~w.~n', [Pemain, WarnaKartu, JenisKartu]),
+
+            hapus_kartu_ke(NomorUrut, ListKartu, ListKartuBaru),
+            retract(tangan_pemain(Pemain, _)),
+            asserta(tangan_pemain(Pemain, ListKartuBaru)),
+
+            retractall(kartu_dibuang(_)),
+            asserta(kartu_dibuang(KartuAtas)),
+            retract(discard_top(_)),
+            asserta(discard_top(KartuPilihan)),
+
+            update_warna_aktif(WarnaKartu),
+            aplikasikan_efek(KartuPilihan)
+        ;   write('Kartu tidak valid! Warna atau jenisnya tidak sesuai dengan meja.'), nl
+        )
+    ;   write('Nomor urut tidak valid! Anda tidak memiliki kartu di posisi tersebut.'), nl
+    ).
