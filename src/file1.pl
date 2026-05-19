@@ -169,11 +169,22 @@ pindah_giliran :-
     asserta(giliran_sekarang(Pemain1)),
     format('Giliran ~w.~n', [Pemain1]).
 
+get_element([Element|_], 0, Element).
+get_element([_|Tail], Index, Element) :-
+    Index > 0,
+    NewIndex is Index - 1,
+    get_element(Tail, NewIndex, Element).
+
+get_indeks([Element|_], Element, 0).
+get_indeks([_|Tail], Element, Indeks):-
+    get_indeks(Tail, Element, Indeks1),
+    Indeks is Indeks1 + 1.
+
 pemain_selanjutnya(Sebelum, List, Sesudah) :- 
-    nth0(Indeks, List, Sebelum),
+    get_indeks(List, Sebelum, Indeks),
     length(List, Len),
     Indeks1 is (Indeks + 1) mod Len,
-    nth0(Indeks1, List, Sesudah).
+    get_element(List, Indeks1, Sesudah).
 
 /* LIHAT COMMAND */
 lihatCommand :-
