@@ -263,10 +263,10 @@ cetak_info_semua_pemain([Pemain|Sisa], N) :-
 
 /* TANTANG */
 pemain_sebelumnya(Sesudah, List, Sebelum):-
-    nth0(Indeks, List, Sesudah),
+    get_indeks(List, Sesudah, Indeks),
     length(List, Len),
     (Indeks =:= 0 -> IndeksSebelum is Len - 1; IndeksSebelum is Indeks - 1),
-    nth0(IndeksSebelum, List, Sebelum).
+    get_element(List, IndeksSebelum, Sebelum).
 
 punya_kartu_valid(Pemain, kartu(Warna, Jenis)):-
     tangan_pemain(Pemain, ListKartu),
