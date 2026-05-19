@@ -2,6 +2,7 @@
 % fitur startGame (Bintang & Neysa)
 
 :- include('file1.pl').
+:- dynamic status_uni/1.
 
 startGame :-
     % bersihin state dari sisa game sebelumnya (kalau ada)
@@ -169,11 +170,59 @@ valid_kartu(Warna, Jenis) :- warna(Warna), jenis_angka(Jenis).
 valid_kartu(Warna, Jenis) :- warna(Warna), jenis_aksi(Jenis).
 valid_kartu(hitam, Jenis) :- jenis_aksi_wild(Jenis).
 
+% --- PENGGANTI FINDALL UNTUK INISIALISASI DECK ---
+
+% 1. Bikin list eksplisit sebagai bahan dasar
+daftar_warna([merah, kuning, hijau, biru]).
+daftar_angka([0, 1, 2, 3, 4, 5, 6, 7, 8, 9]).
+daftar_aksi([skip, reverse, draw_two]).
+daftar_wild([wild, wild_draw_four]).
+
+% 2. Helper rekursif untuk bikin kartu angka
+gabung_angka(_, [], []).
+gabung_angka(Warna, [Angka|Tail], [kartu(Warna, Angka)|HasilTail]) :-
+    gabung_angka(Warna, Tail, HasilTail).
+
+loop_warna_angka([], _, []).
+loop_warna_angka([Warna|TailWarna], ListAngka, Hasil) :-
+    gabung_angka(Warna, ListAngka, KartuWarnaIni),
+    loop_warna_angka(TailWarna, ListAngka, KartuWarnaLain),
+    append(KartuWarnaIni, KartuWarnaLain, Hasil).
+
+% 3. Helper rekursif untuk bikin kartu aksi
+gabung_aksi(_, [], []).
+gabung_aksi(Warna, [Aksi|Tail], [kartu(Warna, Aksi)|HasilTail]) :-
+    gabung_aksi(Warna, Tail, HasilTail).
+
+loop_warna_aksi([], _, []).
+loop_warna_aksi([Warna|TailWarna], ListAksi, Hasil) :-
+    gabung_aksi(Warna, ListAksi, KartuWarnaIni),
+    loop_warna_aksi(TailWarna, ListAksi, KartuWarnaLain),
+    append(KartuWarnaIni, KartuWarnaLain, Hasil).
+
+% 4. Helper rekursif untuk bikin kartu wild (warna hitam otomatis)
+loop_wild([], []).
+loop_wild([Wild|Tail], [kartu(hitam, Wild)|HasilTail]) :-
+    loop_wild(Tail, HasilTail).
+
+% 5. FUNGSI UTAMA INISIALISASI DECK (Tanpa Findall)
 inisialisasi_deck(DeckLengkap) :-
-    % findall akan mengumpulkan semua kemungkinan kartu berdasarkan rule valid_kartu
-    findall(kartu(W, J), valid_kartu(W, J), DeckDasar),
-    % biasanya kartu UNO butuh deck yang banyak, kita bisa gabungkan 2 deck dasar
-    append(DeckDasar, DeckDasar, DeckLengkap). 
+    daftar_warna(Warna),
+    daftar_angka(Angka),
+    daftar_aksi(Aksi),
+    daftar_wild(Wild),
+    
+    % Generate semua kombinasi
+    loop_warna_angka(Warna, Angka, DeckAngka),
+    loop_warna_aksi(Warna, Aksi, DeckAksi),
+    loop_wild(Wild, DeckWild),
+    
+    % Gabungin semua jadi satu DeckDasar
+    append(DeckAngka, DeckAksi, TempDeck),
+    append(TempDeck, DeckWild, DeckDasar),
+    
+    % Gandakan 2 deck dasar seperti kodemu sebelumnya
+    append(DeckDasar, DeckDasar, DeckLengkap).
 
 % helper pembagian kartu
 bagi_kartu_pemain([], Deck, Deck). 
@@ -313,3 +362,47 @@ cetak_urutan_pemenang([skor(Poin, _, _, Pemain)|T], Peringkat) :-
     format('~w. ~w (~w poin)~n', [Peringkat, Pemain, Poin]),
     Peringkat1 is Peringkat + 1,
     cetak_urutan_pemenang(T, Peringkat1).
+
+% --- FITUR TANGKAP ---
+
+tangkap(TargetPemain) :-
+    % 1. Validasi: pastikan TargetPemain beneran ada di dalam game
+    urutan_pemain(ListPemain),
+    member(TargetPemain, ListPemain),
+
+    % 2. Ambil list kartu di tangan TargetPemain
+    tangan_pemain(TargetPemain, Tangan),
+    length(Tangan, JumlahKartu),
+
+    % 3. Eksekusi logika tangkap
+    ( JumlahKartu =:= 1 ->
+        % Jika kartunya sisa 1, cek apakah dia udah bilang UNI
+        ( \+ status_uni(TargetPemain) ->
+            % Kalau BELUM bilang UNI -> Kena hukuman ambil 2 kartu
+            write('MAMPUSSSZZSS! '), write(TargetPemain), write(' lupa bilang UNI kan lu'), nl,
+            write('Hukuman: '), write(TargetPemain), write(' harus ambil 2 kartu tambahan.'), nl,
+
+            % Proses ambil 2 kartu dari deck
+            deck_kartu(DeckSekarang),
+            ambil_N_kartu(2, DeckSekarang, KartuHukuman, SisaDeck),
+
+            % Update state deck
+            retract(deck_kartu(DeckSekarang)),
+            asserta(deck_kartu(SisaDeck)),
+
+            % Update state tangan pemain yang ditangkap
+            append(Tangan, KartuHukuman, TanganBaru),
+            retract(tangan_pemain(TargetPemain, Tangan)),
+            asserta(tangan_pemain(TargetPemain, TanganBaru))
+        ;
+            % Kalau SUDAH bilang UNI
+            write('enak aje lu '), write(TargetPemain), write(' udah bilang UNI tadi, jadi aman dongg'), nl
+        )
+    ;
+        % Jika kartunya BUKAN sisa 1
+        write('Salah tangkap! Kartu '), write(TargetPemain), write(' masih '), write(JumlahKartu), write(' lembar...'), nl
+    ), !.
+
+% Fallback kalau nama pemain yang diinput ngawur / typo
+tangkap(TargetPemain) :-
+    write('??? Siapa '), write(TargetPemain), write('? Ga ada di game ini! Cek typo.'), nl.
